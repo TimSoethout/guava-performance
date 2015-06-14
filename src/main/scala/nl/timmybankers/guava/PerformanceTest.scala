@@ -33,13 +33,15 @@ object PerformanceTest extends App {
         second(input)
     }
 
+    val count = 1000;
+
     val inputs: Seq[T] =
-      0 to 1000 map {
+      0 to count map {
         _ => generator.sample.get
       }
 
-    val (firstWins, secondWins): (Int, Int) = inputs.foldLeft((0, 0)) {
-      case ((prevFirstWins, prevSecondWins), input) =>
+    val (firstWins, secondWins, totalFirst, totalSecond): (Int, Int, Duration, Duration) = inputs.foldLeft((0, 0, 0.millis: Duration, 0.millis: Duration)) {
+      case ((prevFirstWins, prevSecondWins, prevTotalFirst: Duration, prevTotalSecond: Duration), input) =>
         //        println(s"run for input with ${input.size}")
 
         val firstTime = time {
@@ -50,17 +52,19 @@ object PerformanceTest extends App {
         val secondTime = time {
           second(input)
         }
-        println(s"$secondLabel  took: $secondTime")
+        println(s"$secondLabel took: $secondTime")
 
         println(s"Difference (second-first): ${secondTime - firstTime}")
+
         if (secondTime < firstTime) {
-          (prevFirstWins, prevSecondWins + 1)
+          (prevFirstWins, prevSecondWins + 1, prevTotalFirst + firstTime, prevTotalSecond + secondTime)
         } else {
-          (prevFirstWins + 1, prevSecondWins)
+          (prevFirstWins + 1, prevSecondWins, prevTotalFirst + firstTime, prevTotalSecond + secondTime)
         }
 
     }
     println(s"$firstLabel fastest #$firstWins; $secondLabel fastest #$secondWins")
+    println(s"$firstLabel mean ${totalFirst / count}; $secondLabel mean ${totalSecond / count}")
   }
 
 
