@@ -9,7 +9,7 @@ import org.scalacheck.Gen
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
-object PerformanceTest extends App {
+object PerformanceTestApp extends App {
 
   // First compare Null filter on list
   compare[util.Collection[String]](Helpers.listWithNullGenerator, "Guava", {
