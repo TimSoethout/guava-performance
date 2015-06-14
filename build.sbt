@@ -1,0 +1,11 @@
+name := "guava-performance"
+
+version := "1.0"
+
+scalaVersion := "2.11.6"
+
+
+libraryDependencies += "com.google.guava" % "guava" % "18.0"
+libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.4" % "test"
+libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.12.2"
+libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.4"
