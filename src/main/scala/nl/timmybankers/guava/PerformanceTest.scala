@@ -1,30 +1,34 @@
 package nl.timmybankers.guava
 
+import java.util
 import java.util.concurrent.TimeUnit
 
 import com.google.common.base.Stopwatch
 import org.scalacheck.Gen
 
+import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
 object PerformanceTest extends App {
 
-
   // First compare Null filter on list
-  compare(Helpers.listWithNullGenerator, "Guava", {
-    FilterNulls.filterNullsGuava[String]
+  compare[util.Collection[String]](Helpers.listWithNullGenerator, "Guava", {
+    input: util.Collection[String] =>
+      FilterNulls.filterNullsGuava[String](input).asScala foreach (_ => Unit)
   }, "Plain", {
-    FilterNulls.filterNullsPlain[String]
+    input: util.Collection[String] =>
+      FilterNulls.filterNullsPlain[String](input).asScala foreach (_ => Unit)
   })
 
   // Now the real use case on Map
   compare(Helpers.mapWithNullValuesGenerator, "Guava", {
-    FilterNulls.filterBlanksInMapGuava[String]
-  }, "Plain", {
-    FilterNulls.filterBlanksInMapPlain[String]
+    input: util.Map[String, String] =>
+      FilterNulls.filterBlanksInMapGuava[String](input).asScala foreach (_ => Unit)
+  }, "Plain", { input: util.Map[String, String] =>
+    FilterNulls.filterBlanksInMapPlain[String](input).asScala foreach (_ => Unit)
   })
 
-  def compare[T](generator: Gen[T], firstLabel: String, first: T => T, secondLabel: String, second: T => T) = {
+  def compare[T](generator: Gen[T], firstLabel: String, first: T => Unit, secondLabel: String, second: T => Unit) = {
     // warm up JVM
     0 to 1000 foreach {
       _ =>
@@ -33,7 +37,7 @@ object PerformanceTest extends App {
         second(input)
     }
 
-    val count = 1000;
+    val count = 1000
 
     val inputs: Seq[T] =
       0 to count map {
