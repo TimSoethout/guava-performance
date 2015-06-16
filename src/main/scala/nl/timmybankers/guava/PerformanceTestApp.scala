@@ -20,12 +20,21 @@ object PerformanceTestApp extends App {
       FilterNulls.filterNullsPlain[String](input).asScala foreach (_ => Unit)
   })
 
-  // Now the real use case on Map
+  //     Now the real use case on Map
   compare(Helpers.mapWithNullValuesGenerator, "Guava", {
     input: util.Map[String, String] =>
       FilterNulls.filterBlanksInMapGuava[String](input).asScala foreach (_ => Unit)
   }, "Plain", { input: util.Map[String, String] =>
     FilterNulls.filterBlanksInMapPlain[String](input).asScala foreach (_ => Unit)
+  })
+
+  compare(Helpers.mapWithNullValuesGenerator, "GuavaChained", {
+    input: util.Map[String, String] =>
+      val filtered: util.Map[String, String] = FilterNulls.filterBlanksInMapGuava[String](input)
+      FilterNulls.filterNullsGuava[String](filtered.values()).asScala foreach (_ => Unit)
+  }, "PlainChained", { input: util.Map[String, String] =>
+    val filtered: util.Map[String, String] = FilterNulls.filterBlanksInMapPlain[String](input)
+    FilterNulls.filterNullsPlain[String](filtered.values()).asScala foreach (_ => Unit)
   })
 
   def compare[T](generator: Gen[T], firstLabel: String, first: T => Unit, secondLabel: String, second: T => Unit) = {
@@ -39,34 +48,32 @@ object PerformanceTestApp extends App {
 
     val count = 1000
 
-    val inputs: Seq[T] =
-      0 to count map {
-        _ => generator.sample.get
+    val (firstWins, secondWins, totalFirst, totalSecond): (Int, Int, Duration, Duration) =
+      (0 to count).foldLeft((0, 0, 0.millis: Duration, 0.millis: Duration)) {
+        case ((prevFirstWins, prevSecondWins, prevTotalFirst: Duration, prevTotalSecond: Duration), input) =>
+
+          val input = generator.sample.get
+          //        println(s"run for input with ${input.size}")
+
+          val firstTime = time {
+            first(input)
+          }
+          println(s"$firstLabel took: \t\t $firstTime")
+
+          val secondTime = time {
+            second(input)
+          }
+          println(s"$secondLabel took: $secondTime")
+
+          println(s"Difference (second-first): ${secondTime - firstTime}")
+
+          if (secondTime < firstTime) {
+            (prevFirstWins, prevSecondWins + 1, prevTotalFirst + firstTime, prevTotalSecond + secondTime)
+          } else {
+            (prevFirstWins + 1, prevSecondWins, prevTotalFirst + firstTime, prevTotalSecond + secondTime)
+          }
+
       }
-
-    val (firstWins, secondWins, totalFirst, totalSecond): (Int, Int, Duration, Duration) = inputs.foldLeft((0, 0, 0.millis: Duration, 0.millis: Duration)) {
-      case ((prevFirstWins, prevSecondWins, prevTotalFirst: Duration, prevTotalSecond: Duration), input) =>
-        //        println(s"run for input with ${input.size}")
-
-        val firstTime = time {
-          first(input)
-        }
-        println(s"$firstLabel took: \t\t $firstTime")
-
-        val secondTime = time {
-          second(input)
-        }
-        println(s"$secondLabel took: $secondTime")
-
-        println(s"Difference (second-first): ${secondTime - firstTime}")
-
-        if (secondTime < firstTime) {
-          (prevFirstWins, prevSecondWins + 1, prevTotalFirst + firstTime, prevTotalSecond + secondTime)
-        } else {
-          (prevFirstWins + 1, prevSecondWins, prevTotalFirst + firstTime, prevTotalSecond + secondTime)
-        }
-
-    }
     println(s"$firstLabel fastest #$firstWins; $secondLabel fastest #$secondWins")
     println(s"$firstLabel mean ${totalFirst / count}; $secondLabel mean ${totalSecond / count}")
   }

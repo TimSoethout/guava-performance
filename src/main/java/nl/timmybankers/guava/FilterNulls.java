@@ -7,7 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class FilterNulls {
@@ -41,7 +41,7 @@ public class FilterNulls {
     }
 
     public static <K> Map<K, String> filterBlanksInMapPlain(Map<K, String> input) {
-        final Map<K, String> result = new HashMap<K, String>();
+        final Map<K, String> result = new LinkedHashMap<>(); // new HashMap<K, String>();
 
         for (Map.Entry<K, String> entry : input.entrySet()) {
             final String value = entry.getValue();
